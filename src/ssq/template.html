@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0a0b0f" />
+<meta name="description" content="双色球走势分析工具：完整历史开奖数据、走势图、遗漏与冷热统计、形态分析、选号方案与历史回测。数据仅供分析参考，彩票每期独立随机，任何方法都无法预测。"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23121%E'/%3E%3Ccircle cx='34' cy='50' r='26' fill='%23e8382f'/%3E%3Ccircle cx='70' cy='50' r='26' fill='%232f7be8'/%3E%3C/svg%3E" />
+<title>双色球 · 走势分析</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(880px 460px at 12% -6%, rgba(232,56,47,.13), transparent 60%),
+      radial-gradient(760px 420px at 92% 0%, rgba(47,123,232,.13), transparent 58%),
+      #0a0b0f;
+    color:#e9ecf1;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC",system-ui,sans-serif;
+    font-size:14px;line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit}
+  ::selection{background:rgba(232,56,47,.35)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 14px 60px}
+
+  /* ---------- header ---------- */
+  .hd{padding:22px 0 0}
+  .hd-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{
+    width:44px;height:44px;border-radius:14px;flex:0 0 auto;position:relative;
+    background:linear-gradient(145deg,#1b1f28,#12151b);border:1px solid rgba(255,255,255,.09);
+    box-shadow:0 10px 26px -12px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .mark::before,.mark::after{content:'';position:absolute;width:17px;height:17px;border-radius:50%;top:13px}
+  .mark::before{left:9px;background:linear-gradient(160deg,#ff5a4d,#c2271f);box-shadow:0 0 12px rgba(232,56,47,.55)}
+  .mark::after{right:9px;background:linear-gradient(160deg,#5a9dff,#1f5fc4);box-shadow:0 0 12px rgba(47,123,232,.55)}
+  h1{font-size:19px;margin:0;letter-spacing:.3px;font-weight:700}
+  .sub{font-size:11.5px;color:#8b93a1;margin-top:2px}
+  .sub b{color:#f2c14e;font-weight:600}
+  .hd-meta{display:flex;gap:8px;flex-wrap:wrap}
+  .tag{font-size:11px;color:#9aa2b1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:5px 9px;white-space:nowrap}
+  .tag b{color:#e9ecf1;font-weight:600;font-variant-numeric:tabular-nums}
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    display:flex;gap:4px;margin:16px 0 14px;padding:4px;border-radius:12px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+    position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);
+  }
+  .tabs button{
+    flex:1;border:0;background:transparent;color:#8b93a1;font-size:13px;font-weight:600;
+    padding:9px 6px;border-radius:9px;cursor:pointer;transition:.16s;white-space:nowrap;
+  }
+  .tabs button.on{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06));color:#fff;box-shadow:0 2px 10px -4px rgba(0,0,0,.8)}
+  .tabs button:hover{color:#d5dae3}
+
+  /* ---------- card ---------- */
+  .card{
+    background:linear-gradient(180deg,#15181f,#101319);
+    border:1px solid rgba(255,255,255,.07);border-radius:15px;padding:14px;
+    margin-bottom:12px;box-shadow:0 20px 44px -34px rgba(0,0,0,.9);
+  }
+  .card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;row-gap:9px}
+  .card-t{font-size:13px;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .card-t::before{content:'';width:3px;height:13px;border-radius:2px;background:linear-gradient(180deg,#ff5a4d,#c2271f)}
+  .card-t.bl::before{background:linear-gradient(180deg,#5a9dff,#1f5fc4)}
+  .card-t span{font-size:11px;font-weight:500;color:#6c7482;letter-spacing:0}
+  .mut{font-size:11px;color:#6c7482}
+
+  .seg{display:inline-flex;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:9px;padding:3px;gap:2px;flex:0 0 auto}
+  .seg button{border:0;background:transparent;color:#8b93a1;font-size:12px;font-weight:600;padding:5px 9px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .seg button.on{background:rgba(255,255,255,.11);color:#fff}
+
+  .btn{
+    border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.05);color:#dfe4ec;
+    border-radius:10px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;transition:.16s;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  }
+  .btn:hover{background:rgba(255,255,255,.09);transform:translateY(-1px)}
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn.red{background:linear-gradient(135deg,#f04b40,#c2271f);border-color:#ff6a5f;color:#fff;box-shadow:0 8px 22px -10px rgba(232,56,47,.8)}
+  .btn.red:hover{background:linear-gradient(135deg,#ff5a4d,#d02c23)}
+  .btn.ghost{background:transparent}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  /* ---------- trend chart ---------- */
+  .scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .scroll::-webkit-scrollbar{height:6px}
+  .scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
+  .trend{width:100%;font-variant-numeric:tabular-nums}
+  .trend.blue{max-width:720px}
+  .tr{display:flex;align-items:center;height:26px;width:100%}
+  .tr:hover{background:rgba(255,255,255,.03)}
+  .th{
+    position:sticky;left:0;z-index:2;flex:0 0 58px;width:58px;background:#12151b;
+    font-size:9.5px;color:#6c7482;line-height:1.15;padding-left:2px;
+    border-right:1px solid rgba(255,255,255,.05);
+  }
+  .th b{display:block;font-size:10px;color:#9aa2b1;font-weight:600;letter-spacing:0}
+  .tc{flex:1 1 0;min-width:17px;height:26px;display:grid;place-items:center;font-size:10px;color:#4e5661;position:relative}
+  .tc.z1{background:rgba(255,255,255,.012)}
+  .tc.z2{background:rgba(255,255,255,.028)}
+  .tc.h{
+    color:#fff;font-weight:700;font-size:10px;position:relative;
+  }
+  .tc.h::before{
+    content:'';position:absolute;width:min(80%,20px);aspect-ratio:1;border-radius:50%;
+    left:50%;top:50%;transform:translate(-50%,-50%);
+    background:linear-gradient(160deg,#ff5a4d,#c2271f);
+    box-shadow:0 2px 8px -2px rgba(232,56,47,.85), inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .tc.h span{position:relative;z-index:1}
+  .trend.blue .tc.h::before{background:linear-gradient(160deg,#5a9dff,#1f5fc4);box-shadow:0 2px 8px -2px rgba(47,123,232,.85), inset 0 1px 0 rgba(255,255,255,.25)}
+  .hdrow{display:flex;align-items:center;height:20px;margin-bottom:2px}
+  .hdrow .th{background:transparent;border:0;color:#565e6b;font-size:9px}
+  .hdrow .tc{color:#565e6b;font-size:9px;font-weight:600}
+  .zonebar{display:flex;margin:0 0 6px 58px;font-size:9px;color:#6c7482;gap:0}
+  .zonebar div{height:14px;display:grid;place-items:center;border-radius:3px;background:rgba(255,255,255,.03);margin-right:2px}
+
+  /* ---------- freq bars ---------- */
+  .fbars{display:flex;align-items:flex-end;gap:3px;height:96px;padding-top:6px}
+  .fb{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:3px;position:relative}
+  .fb i{width:100%;border-radius:2px 2px 0 0;background:linear-gradient(180deg,#ff5a4d,#8e2019);min-height:1px;transition:height .4s cubic-bezier(.2,.9,.3,1)}
+  .fb span{font-size:8px;color:#565e6b;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.3px}
+  .fb em{position:absolute;top:-2px;font-size:8px;color:#9aa2b1;font-style:normal;opacity:0;transition:.2s}
+  .fb:hover em{opacity:1}
+
+  /* ---------- svg chart ---------- */
+  .chart{width:100%;height:auto;display:block;overflow:visible}
+  .chart text{font-size:9px;fill:#565e6b}
+  .chart .grid{stroke:rgba(255,255,255,.055);stroke-width:1}
+  .chart .ln{fill:none;stroke:#f2c14e;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+  .chart .pt{fill:#0f1217;stroke:#f2c14e;stroke-width:1.4}
+  .chart .avg{stroke:rgba(242,193,78,.4);stroke-width:1;stroke-dasharray:4 4}
+
+  /* ---------- stats grid ---------- */
+  .g33{display:grid;grid-template-columns:repeat(11,1fr);gap:5px}
+  .nb{
+    border-radius:8px;padding:6px 0 5px;text-align:center;border:1px solid rgba(255,255,255,.05);
+    background:rgba(255,255,255,.02);transition:.15s;cursor:default;position:relative;
+  }
+  .nb b{display:block;font-size:12px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+  .nb span{display:block;font-size:8.5px;color:#6c7482;margin-top:1px;font-variant-numeric:tabular-nums}
+  .nb.hot1{background:rgba(232,56,47,.14);border-color:rgba(232,56,47,.3)}
+  .nb.hot2{background:rgba(232,56,47,.26);border-color:rgba(232,56,47,.45)}
+  .nb.hot3{background:rgba(232,56,47,.4);border-color:rgba(232,56,47,.6)}
+  .nb.hot3 b,.nb.hot2 b{color:#fff}
+  .nb.cold{background:rgba(47,123,232,.1);border-color:rgba(47,123,232,.24)}
+  .nb.cold b{color:#8ab8ff}
+  .nb.blue{border-color:rgba(47,123,232,.2)}
+
+  .tops{display:flex;flex-direction:column;gap:8px;margin-top:13px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.07)}
+  .tops .line{display:flex;gap:8px;align-items:center;font-size:11.5px;flex-wrap:wrap}
+  .tops .k{color:#6c7482;flex:0 0 52px}
+  .bub{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+  .bub.r{background:linear-gradient(160deg,#ff5a4d,#c2271f);color:#fff}
+  .bub.b{background:linear-gradient(160deg,#5a9dff,#1f5fc4);color:#fff}
+  .bub.g{background:rgba(255,255,255,.07);color:#b8c0cd;border:1px solid rgba(255,255,255,.1)}
+
+  .forms{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+  .fcard{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.055);border-radius:10px;padding:9px 10px}
+  .fcard .ft{font-size:10.5px;color:#7d8593;margin-bottom:5px}
+  .fcard .fv{font-size:12.5px;font-weight:700;margin-bottom:6px}
+  .mini-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;display:flex}
+  .mini-bar i{display:block;height:100%}
+
+  /* ---------- picks ---------- */
+  .tk{
+    border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.022);
+    padding:10px 11px;margin-bottom:8px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+    animation:rise .3s ease backwards;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .tk-no{font-size:10px;font-weight:800;color:#6c7482;font-variant-numeric:tabular-nums;flex:0 0 18px}
+  .balls{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .ball{
+    width:27px;height:27px;border-radius:50%;display:grid;place-items:center;
+    font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;
+    background:linear-gradient(160deg,#ff5a4d,#c2271f);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 3px 9px -3px rgba(232,56,47,.75);
+  }
+  .ball.blue{background:linear-gradient(160deg,#5a9dff,#1f5fc4);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 3px 9px -3px rgba(47,123,232,.75)}
+  .ball.hit{outline:2px solid #f2c14e;outline-offset:1px}
+  .tk-meta{font-size:10.5px;color:#6c7482;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tk-sum{font-size:11.5px;color:#8b93a1;margin-top:6px;padding-top:9px;border-top:1px dashed rgba(255,255,255,.07)}
+
+  .empty{padding:26px 8px;text-align:center;color:#5f6775;font-size:12.5px;line-height:1.9}
+  .empty b{color:#8b93a1;font-weight:600}
+
+  .note{font-size:11.5px;color:#6c7482;line-height:1.85}
+  .note p{margin:0 0 8px}
+  .note p:last-child{margin:0}
+  .note b{color:#a9b2c0;font-weight:600}
+  .warn{display:flex;gap:9px;align-items:flex-start;border:1px solid rgba(242,160,61,.2);background:rgba(242,160,61,.055);border-radius:10px;padding:9px 11px;font-size:11.5px;color:#c9a877;line-height:1.7}
+  .warn svg{flex:0 0 auto;margin-top:1px}
+
+  .bt-res{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .bt-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px}
+  .bt-card .t{font-size:10.5px;color:#7d8593;margin-bottom:6px}
+  .bt-card .v{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+  .bt-card .s{font-size:10px;color:#6c7482;margin-top:3px;font-variant-numeric:tabular-nums}
+
+  /* ---------- rhythm ---------- */
+  .rhy-hero{
+    border-radius:14px;padding:16px 14px 13px;
+    background:radial-gradient(130% 100% at 50% 0%,rgba(232,56,47,.16),rgba(232,56,47,.03) 58%,transparent);
+    border:1px solid rgba(232,56,47,.18);
+  }
+  .rhy-cap{text-align:center;font-size:11px;color:#8b93a1;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+  .rhy-cap b{color:#fff;font-size:12px;font-variant-numeric:tabular-nums}
+  .rhy-cap .dot{width:6px;height:6px;border-radius:50%;background:#ff5a4d;box-shadow:0 0 0 3px rgba(255,90,77,.16);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .rhy-balls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+  .rb{display:flex;flex-direction:column;align-items:center;gap:4px;animation:rise .4s ease backwards}
+  .rb.sep{margin-left:6px;padding-left:14px;border-left:1px dashed rgba(255,255,255,.1)}
+  .ball.lg{width:46px;height:46px;font-size:17px}
+  .rb .m{font-size:9.5px;color:#7d8593;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .rb .m2{font-size:9px;color:#4e5661;font-variant-numeric:tabular-nums}
+  .rhy-meta{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:#6c7482}
+  .rhy-meta b{color:#dfe4ec;font-weight:700;font-variant-numeric:tabular-nums}
+  .rhy-meta i{width:1px;height:9px;background:rgba(255,255,255,.1)}
+  .rhy-note{font-size:11px;color:#6c7482;line-height:1.8;margin-top:12px;padding:9px 11px;border-radius:9px;background:rgba(255,255,255,.018);border:1px solid rgba(255,255,255,.05)}
+  .rhy-note b{color:#a9b2c0;font-weight:600}
+
+  .rk-row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.06);font-size:11.5px;line-height:1.65}
+  .rk-row:last-child{border-bottom:0;padding-bottom:0}
+  .rk-k{flex:0 0 56px;color:#6c7482}
+  .rk-v{flex:1;min-width:0;color:#a9b2c0}
+  .rk-v em{font-style:normal;color:#f2c14e;font-weight:700;font-variant-numeric:tabular-nums}
+  .rhy-alt{margin-top:12px;padding-top:11px;border-top:1px dashed rgba(255,255,255,.06)}
+  .alt-row{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap}
+
+  .nb.pool{border-color:rgba(242,193,78,.34);background:rgba(242,193,78,.07)}
+  .nb.lastrep{border-style:dashed;border-color:rgba(255,255,255,.2)}
+  .nb.pool b{color:#f2c14e}
+  .nb.sel{background:linear-gradient(160deg,#ff5a4d,#c2271f);border-color:#ff6a5f;box-shadow:0 5px 14px -8px rgba(232,56,47,.9)}
+  .nb.sel b{color:#fff}
+  .nb.sel span{color:rgba(255,255,255,.72)}
+
+  .bt-verdict{margin-top:10px;font-size:11.5px;color:#8b93a1;line-height:1.85;padding:10px 11px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.055)}
+  .bt-verdict b{color:#dfe4ec;font-weight:600}
+  .dist-cap{font-size:10.5px;color:#565e6b;margin-top:12px;padding-top:11px;border-top:1px dashed rgba(255,255,255,.06)}
+  .dist-row{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:7px}
+  .dist-i{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.055);background:rgba(255,255,255,.022);border-radius:8px;padding:7px 2px 8px;text-align:center}
+  .dist-i.dim{opacity:.42}
+  .dist-i b{display:block;font-size:12px;font-weight:800;color:#dfe4ec;font-variant-numeric:tabular-nums;line-height:1.2}
+  .dist-i em{display:block;font-size:9px;color:#7d8593;font-style:normal;font-variant-numeric:tabular-nums}
+  .dist-i i{position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg,#ff5a4d,#c2271f);border-radius:0 2px 0 0;transition:width .4s}
+
+  .toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,14px);background:rgba(28,32,40,.97);border:1px solid rgba(255,255,255,.12);color:#eef1f6;padding:9px 16px;border-radius:10px;font-size:12.5px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 16px 40px -14px rgba(0,0,0,.9);backdrop-filter:blur(8px);white-space:nowrap}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:640px){
+    .wrap{padding:0 10px 50px}
+    .card{padding:12px;border-radius:13px}
+    h1{font-size:17px}
+    .mark{width:38px;height:38px}
+    .mark::before,.mark::after{width:15px;height:15px;top:11px}
+    .mark::before{left:7px}.mark::after{right:7px}
+    .tabs button{font-size:12px;padding:8px 2px}
+    .tc{min-width:19px;font-size:9.5px}
+    .tr{height:24px}
+    .tc{height:24px}
+    .th{flex:0 0 50px;width:50px}
+    .zonebar{margin-left:50px}
+    .g33{gap:4px}
+    .nb b{font-size:11px}
+    .rhy-balls{gap:5px}
+    .ball.lg{width:36px;height:36px;font-size:15px}
+    .rb.sep{padding-left:8px;margin-left:0}
+    .rb .m{font-size:8.5px}
+    .rb .m2{display:none}
+    .rhy-meta{gap:7px;font-size:10.5px}
+    .rk-k{flex:0 0 50px}
+    .rk-row{font-size:11px}
+    .ball{width:25px;height:25px;font-size:11px}
+    .tk-meta{width:100%;margin-left:27px;text-align:left}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hd">
+    <div class="hd-top">
+      <div class="brand">
+        <div class="mark"></div>
+        <div>
+          <h1>双色球 · 走势分析</h1>
+          <div class="sub">全量历史开奖 <b id="metaN"></b> 期 · 更新至 <b id="metaCode"></b> 期</div>
+        </div>
+      </div>
+      <div class="hd-meta">
+        <span class="tag" id="metaDate">—</span>
+        <span class="tag">红球 33 选 6 · 蓝球 16 选 1</span>
+      </div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button data-tab="trend" class="on">走势图</button>
+      <button data-tab="stats">号码分析</button>
+      <button data-tab="rhy">节奏推演</button>
+      <button data-tab="pick">选号方案</button>
+    </div>
+  </div>
+
+  <!-- ================= 走势 ================= -->
+  <section id="tab-trend">
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">红球走势 <span>红圈=开出 · 灰字=遗漏期数</span></div>
+        <div class="seg" id="rangeSeg">
+          <button data-n="20">20期</button>
+          <button data-n="30" class="on">30期</button>
+          <button data-n="50">50期</button>
+          <button data-n="100">100期</button>
+        </div>
+      </div>
+      <div class="scroll"><div class="trend" id="trendRed"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">区间频次 <span id="freqLabel">近 30 期</span></div>
+        <span class="mut" id="freqAvg"></span>
+      </div>
+      <div class="fbars" id="freqBars"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">和值走势 <span>6 个红球之和</span></div>
+        <span class="mut" id="sumRange">近 30 期</span>
+      </div>
+      <div id="sumChart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t bl">蓝球走势</div>
+        <span class="mut">16 个蓝球逐期分布</span>
+      </div>
+      <div class="scroll"><div class="trend blue" id="trendBlue"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">最近 5 期开奖</div></div>
+      <div id="recent"></div>
+    </div>
+  </section>
+
+  <!-- ================= 分析 ================= -->
+  <section id="tab-stats" hidden>
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">红球冷热 <span>颜色越红=出现越多</span></div>
+        <div class="seg" id="hotSeg">
+          <button data-n="30">近30期</button>
+          <button data-n="100" class="on">近100期</button>
+          <button data-n="0">全部</button>
+        </div>
+      </div>
+      <div class="g33" id="hotRed"></div>
+      <div class="tops">
+        <div class="line"><span class="k">热号</span><span id="hotList" class="balls"></span></div>
+        <div class="line"><span class="k">冷号</span><span id="coldList" class="balls"></span></div>
+        <div class="line"><span class="k">久未出</span><span id="omitList" class="balls"></span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t bl">蓝球分布</div><span class="mut" id="blueMeta"></span></div>
+      <div class="g33" id="blueGrid" style="grid-template-columns:repeat(8,1fr)"></div>
+      <div class="tops">
+        <div class="line"><span class="k">最热</span><span id="blueHot" class="balls"></span></div>
+        <div class="line"><span class="k">最冷</span><span id="blueCold" class="balls"></span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">形态分布 <span id="formLabel">近 100 期</span></div>
+        <div class="seg" id="formSeg">
+          <button data-n="30">近30期</button>
+          <button data-n="100" class="on">近100期</button>
+          <button data-n="0">全部</button>
+        </div>
+      </div>
+      <div class="forms" id="formCards"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">和值分布 <span>哪个区间更常出现</span></div><span class="mut" id="sumMeta"></span></div>
+      <div class="fbars" id="sumBars" style="height:110px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">结论速读</div></div>
+      <div class="note" id="insight"></div>
+    </div>
+  </section>
+
+  <!-- ================= 节奏推演 ================= -->
+  <section id="tab-rhy" hidden>
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">节奏推演 <span id="rhySub">近 30 期 · 稳健</span></div>
+        <div class="seg" id="rhyWinSeg">
+          <button data-w="20">20期</button>
+          <button data-w="30" class="on">30期</button>
+          <button data-w="50">50期</button>
+        </div>
+      </div>
+
+      <div id="rhyMain"></div>
+
+      <div class="bar" style="margin-top:12px;justify-content:center">
+        <div class="seg" id="rhyToneSeg">
+          <button data-t="1">跟热</button>
+          <button data-t="3" class="on">稳健</button>
+          <button data-t="5">抓冷</button>
+        </div>
+        <button class="btn red" id="btnRhy">重新推演</button>
+        <button class="btn ghost" id="btnRhyCopy">复制</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t bl">推演依据 <span>这组号为什么是这 6 个</span></div>
+      </div>
+      <div id="rhyBasis"></div>
+      <div class="rhy-alt">
+        <div id="rhyBlueAlt"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">节奏分排行 <span>金框=候选池 · 虚线=上期开出 · 红=本次选中</span></div>
+      </div>
+      <div class="g33" id="rhyGrid"></div>
+      <div class="note" style="margin-top:11px">
+        每个号上方的数字是<b>节奏指数</b>（0–100）：由遗漏、近窗热度、短期动能、自身出现间隔四项加权得来。
+        分数高只代表它"更符合最近的节奏"，不代表更容易被摇出来。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">自检 <span>这套推演到底有没有用</span></div>
+      </div>
+      <div class="note" style="margin-bottom:10px">
+        用<b>过去的数据</b>滚动推演：每一期都只拿"当期之前"的数据推一组号，再和真实开奖结果对奖。
+        同时跑一组纯随机号码做对照。如果推演真的有效，平均命中应该明显高于随机。
+      </div>
+      <div class="bar">
+        <div class="seg" id="rhyTestSeg">
+          <button data-k="200">200 期</button>
+          <button data-k="500" class="on">500 期</button>
+          <button data-k="1000">1000 期</button>
+        </div>
+        <button class="btn" id="btnRhyTest">开始自检</button>
+      </div>
+      <div id="rhyTest"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">说句实话</div></div>
+      <div class="note">
+        <p>这个页面把"看走势买彩票"这件事做到了能做的最好的程度：<b>把号码挑得有理有据</b>。但它改变不了两件事——</p>
+        <p><b>第一，每期都是独立的。</b>摇奖机不知道上一期开了什么，也不知道哪个号"该出了"。所谓节奏，是你在数据里看见的形状，不是机器里存在的规律。</p>
+        <p><b>第二，自检会自己承认。</b>上面那个按钮跑出来的数字，几乎每次都会告诉你：推演的和随机的差不多。这就是最有力的证据。</p>
+      </div>
+      <div class="warn" style="margin-top:11px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        <div>推演结果仅供研究娱乐，不构成任何投注建议。请理性购彩、量力而行，未满 18 周岁不得购买彩票。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 选号 ================= -->
+  <section id="tab-pick" hidden>
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">选号策略</div>
+        <span class="mut">6 红 + 1 蓝 · 每注 2 元</span>
+      </div>
+      <div class="bar" style="margin-bottom:10px">
+        <div class="seg" id="stSeg">
+          <button data-s="mix" class="on">均衡推荐</button>
+          <button data-s="hot">追热号</button>
+          <button data-s="cold">补冷号</button>
+          <button data-s="omit">抓遗漏</button>
+        </div>
+      </div>
+      <div class="bar">
+        <div class="seg" id="cntSeg">
+          <button data-c="5" class="on">5 注</button>
+          <button data-c="10">10 注</button>
+          <button data-c="20">20 注</button>
+        </div>
+        <button class="btn red" id="btnGen">生成方案</button>
+        <button class="btn" id="btnCopy" disabled>复制</button>
+        <span class="mut" id="genCost"></span>
+      </div>
+      <div class="note" style="margin-top:10px" id="stDesc"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">方案 <span id="pickSub">尚未生成</span></div>
+      </div>
+      <div id="picks">
+        <div class="empty">点「生成方案」，按所选策略出号<br/>每组都会检查三区分布、奇偶比、和值是否落在常见区间</div>
+      </div>
+      <div class="bar" style="margin-top:10px">
+        <button class="btn ghost" id="btnAgain" disabled>换一批</button>
+        <div style="flex:1"></div>
+        <span class="mut" id="pickMeta"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">历史回测 <span>这套方法到底有没有用</span></div>
+      </div>
+      <div class="note" style="margin-bottom:10px">
+        用<b>过去的数据</b>跑一遍：每期都用"当期之前"的统计来选号，再用真实开奖结果对奖。
+        同时跑一组<b>纯随机</b>号码做对照。固定每期 5 注，方便横向比较。
+      </div>
+      <div class="bar">
+        <div class="seg" id="btSeg">
+          <button data-p="50">50 期</button>
+          <button data-p="100" class="on">100 期</button>
+          <button data-p="200">200 期</button>
+        </div>
+        <button class="btn" id="btnBt">开始回测</button>
+      </div>
+      <div id="btResult"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">必须知道的三件事</div></div>
+      <div class="note">
+        <p><b>1. 每期都是独立的。</b>摇奖机和上一期开过什么号没有记忆。所谓"冷号该出了""热号正在走强"，只描述过去，不预示未来。</p>
+        <p><b>2. 概率是固定的。</b>一等奖（6红+1蓝）概率 1/17,721,088；任意一注的期望回报约 <b>1 元左右</b>（返奖率约 50%），也就是说长期买一定亏。</p>
+        <p><b>3. 走势图的真实用途。</b>它让你知道数据长什么样、把号码挑得"顺眼"，但不会改变中奖概率。任何声称能预测的人，都拿不出可复现的证据——上面的回测就是证明。</p>
+      </div>
+      <div class="warn" style="margin-top:11px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        <div>数据来自公开开奖记录，仅供研究娱乐。请理性购彩、量力而行，未满 18 周岁不得购买彩票。若购彩已影响生活，请及时求助。</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/*__DATA__*/
+</script>
+<script>
+/*__APP1__*/
+</script>
+<script>
+/*__APP2__*/
+</script>
+<script>
+/*__APP3__*/
+</script>
+</body>
+</html>

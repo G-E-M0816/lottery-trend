@@ -1,0 +1,91 @@
+name: 更新开奖数据
+
+on:
+  # 每天 22:30（北京时间）。GitHub 用 UTC，14:30 UTC = 22:30 CST
+  # 注意：GitHub 的定时任务有 5-20 分钟延迟，属正常现象
+  schedule:
+    - cron: '30 14 * * *'
+  # 也允许在 Actions 页面手动点按钮跑
+  workflow_dispatch:
+  # 源码改动、或外部推了新数据，都重新构建部署一次
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'data/**'
+      - 'build.py'
+      - 'update.py'
+      - '.github/workflows/**'
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 数据源连通性诊断（仅手动触发时）
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        env:
+          LOTTERY_PROXY: ${{ secrets.LOTTERY_PROXY }}
+        run: python update.py --check
+
+      # 抓取失败不中断流程：仍用上一次的数据构建部署，保证页面可用
+      - name: 抓取最新开奖
+        id: fetch
+        continue-on-error: true
+        env:
+          LOTTERY_PROXY: ${{ secrets.LOTTERY_PROXY }}
+        run: |
+          code=0
+          python update.py || code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "update exit code = $code"
+
+      - name: 构建页面
+        run: OUT_DIR=dist python build.py
+
+      - name: 提交数据变更
+        if: steps.fetch.outputs.code == '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "数据无变化，跳过提交"
+          else
+            git commit -m "data: 更新开奖数据 $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # 部署完成后再报错，避免抓取失败导致页面停在旧版本
+      - name: 抓取失败时的提示
+        if: steps.fetch.outputs.code == '1'
+        run: |
+          echo "::error::本次抓取失败，已用上一次的数据完成部署。请查看上方诊断日志，判断是网络受限还是接口改版。"
+          exit 1
