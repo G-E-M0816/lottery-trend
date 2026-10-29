@@ -40,8 +40,8 @@ def http_bytes(url, referer):
         'User-Agent': UA, 'Referer': referer,
         'Accept-Language': 'zh-CN,zh;q=0.9',
     })
-    # 20 秒足够；配了代理时给宽松些，跨国链路慢
-    timeout = int(os.environ.get('LOTTERY_TIMEOUT') or (30 if _PROXY else 20))
+    # 30 秒。海外 runner 抓 500.com 实测要 21s（双色球 1.6s），留足余量
+    timeout = int(os.environ.get('LOTTERY_TIMEOUT') or 30)
     with OPENER.open(req, timeout=timeout) as r:
         return r.read()
 
